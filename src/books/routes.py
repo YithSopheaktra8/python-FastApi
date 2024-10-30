@@ -1,10 +1,30 @@
 from fastapi import APIRouter, Header, status
 from fastapi.exceptions import HTTPException
 from typing import List
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import sessionmaker
+
 from src.books.book_data import books
 from src.books.schemas import *
+from src.db.main import engine
 
 book_router = APIRouter()
+
+async_session = sessionmaker(
+    engine, expire_on_commit=False, class_=AsyncSession
+)
+
+@book_router.get("/test-db-connection")
+async def test_db_connection():
+    async with async_session() as session:
+        try:
+            # Execute a simple query
+            result = await session.execute(select(1))
+            return {"status": "success", "message": "Database connection is working"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
 @book_router.get("/get_header",status_code=200)
 async def get_header(
