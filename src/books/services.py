@@ -39,7 +39,7 @@ class BookService:
         return book if book is not None else None
 
     async def update_book(self, session: AsyncSession, book_id: str, book_update_data: BookUpdateModel):
-        book_to_update = self.get_book(session, book_id) # get the book to update
+        book_to_update = await self.get_book(session, book_id) # get the book to update
         if book_to_update: # check if the book exists
             book_update_data_dict = book_update_data.model_dump() # convert the book update data to a dictionary
             for key, value in book_update_data_dict.items(): # loop through the dictionary
@@ -50,7 +50,7 @@ class BookService:
             raise HTTPException(status_code=404, detail="Book not found")
 
     async def delete_book(self, session: AsyncSession, book_uid: str):
-        book_to_delete = self.get_book(session, book_uid)  # get the book to delete
+        book_to_delete = await self.get_book(session, book_uid)  # get the book to delete
         if book_to_delete is not None: # check if the book exists
             await session.delete(book_to_delete) # delete the book
             await session.commit()
