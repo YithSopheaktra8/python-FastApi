@@ -5,11 +5,17 @@ from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from fastapi.exceptions import HTTPException
 from .utils import create_access_token, decode_access_token, verify_password
-from datetime import timedelta
+from datetime import timedelta, datetime
 from fastapi.responses import JSONResponse
+from .dependencies import RefreshTokenBearer
+
 
 auth_router = APIRouter()
+
+
 user_service = UserService()
+
+
 
 @auth_router.post(
     "/signup",
@@ -74,3 +80,26 @@ async def login(
             )
         else:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
+
+@auth_router.get(
+    "/refresh_token",
+    status_code=status.HTTP_200_OK
+)
+async def refresh_token_bearer(
+    token_details = Depends(RefreshTokenBearer())
+):
+
+    print(f"token details {token_details}")
+    expired_timestamp = token_details['exp']
+    if datetime.fromtimestamp(expired_timestamp) > datetime.now():
+        new_access_token = create_access_token(
+            user_data = token_details['user']
+        )
+        return JSONResponse(
+            content={
+                "token_type": "bearer",
+                "access_token": new_access_token,
+            }
+        )
+
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid refresh token")
